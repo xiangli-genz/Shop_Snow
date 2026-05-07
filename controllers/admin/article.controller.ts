@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import CategoryBlog from '../../models/category-blog.model';
 import { buildCategoryTree } from '../../helpers/category.helper';
+import slugify from 'slugify';
 
 export const category = (req: Request, res: Response) => {
   res.render("admin/pages/article-category", {
@@ -20,17 +21,23 @@ export const createCategory = async (req: Request, res: Response) => {
   });
 }
 export const createCategoryPost = async (req: Request, res: Response) => {
-  const exitsSlug = await CategoryBlog.findOne({ 
-    slug: req.body.slug
-  });
-
-  if(exitsSlug) {
-    res.json({
-      code: "error",
-      message: "Đường dẫn đã tồn tại"
+  try {
+    const exitsSlug = await CategoryBlog.findOne({ 
+      slug: req.body.slug
     });
-    return;
-  }
+
+    if(exitsSlug) {
+      res.json({
+        code: "error",
+        message: "Đường dẫn đã tồn tại"
+      });
+      return;
+    }
+    req.body.search = slugify(`${req.body.name}`, {
+        replacement: " ",
+        lower: true
+      });
+
 
   const newRecord = new CategoryBlog(req.body);
   await newRecord.save();
@@ -39,4 +46,10 @@ export const createCategoryPost = async (req: Request, res: Response) => {
     code: "success",
     message: "Tạo danh mục bài viết thành công"
   })
+  } catch (error) {
+    res.json({
+      code: "error",
+      message: "Dữ liệu không hợp lệ!"
+    })
+  }
 }
