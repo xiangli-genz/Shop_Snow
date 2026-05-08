@@ -97,6 +97,59 @@ if(articleCreateCategoryForm) {
 }
 //end articleCreateCategoryForm
 
+// articleEditCategoryForm
+const articleEditCategoryForm = document.querySelector("#articleEditCategoryForm");
+if(articleEditCategoryForm) {
+  const validator = new JustValidate('#articleEditCategoryForm');
+
+  validator
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên danh mục!',
+      },
+    ])
+    .addField('#slug', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập đường dẫn!',
+      },
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const name = event.target.name.value;
+      const slug = event.target.slug.value;
+      const parent = event.target.parent.value;
+      const status = event.target.status.value;
+      const description = tinymce.get("description").getContent();
+
+      // Tạo formData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("slug", slug);
+      formData.append("parent", parent);
+      formData.append("status", status);
+      formData.append("description", description);
+
+      fetch(`/${pathAdmin}/article/category/edit/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    });
+}
+// End articleEditCategoryForm
+
+
 // btn-generate-slug
 const buttonGenerateSlug = document.querySelector("[btn-generate-slug]");
 if(buttonGenerateSlug) {
@@ -131,3 +184,77 @@ if(buttonGenerateSlug) {
   })
 }
 // End btn-generate-slug
+
+// button-api
+const listButtonApi = document.querySelectorAll("[button-api]");
+if(listButtonApi.length > 0) {
+  listButtonApi.forEach(button => {
+    button.addEventListener("click", () => {
+      const method = button.getAttribute("data-method");
+      const api = button.getAttribute("data-api");
+
+      fetch(api, {
+        method: method || "GET"
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify(data.code, data.message);
+            location.reload();
+          }
+        })
+    })
+  })
+}
+// End button-api
+
+// form-search
+const formSearch = document.querySelector("[form-search]");
+if(formSearch) {
+  const url = new URL(window.location.href);
+
+  formSearch.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const value = event.target.keyword.value;
+    if(value) {
+      url.searchParams.set("keyword", value);
+    } else {
+      url.searchParams.delete("keyword");
+    }
+    window.location.href = url.href;
+  })
+
+  // Hiển thị giá trị mặc định
+  const valueCurrent = url.searchParams.get("keyword");
+  if(valueCurrent) {
+    formSearch.keyword.value = valueCurrent;
+  }
+}
+// End form-search
+
+// pagination
+const pagination = document.querySelector("[pagination]");
+if(pagination) {
+  const url = new URL(window.location.href);
+
+  pagination.addEventListener("change", () => {
+    const value = pagination.value;
+    if(value) {
+      url.searchParams.set("page", value);
+    } else {
+      url.searchParams.delete("page");
+    }
+    window.location.href = url.href;
+  })
+
+  // Hiển thị giá trị mặc định
+  const valueCurrent = url.searchParams.get("page");
+  if(valueCurrent) {
+    pagination.value = valueCurrent;
+  }
+}
+// End pagination

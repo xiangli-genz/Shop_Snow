@@ -10,6 +10,11 @@ block main
               h4.card-title #{pageTitle}
             // end col
             .col-auto
+              a.btn.btn-danger.me-1(
+                href=`/${pathAdmin}/article/category/trash`
+                )
+                i.las.la-trash-alt.me-1
+                | Thùng rác
               a.btn.btn-primary(
                 href=`/${pathAdmin}/article/category/create`
                 )
@@ -18,5 +23,55 @@ block main
           // end row
         // end card-header
         .card-body.pt-0
-          //- Table
+          .row
+            .col-lg-6
+              form.input-group.mb-3(form-search)
+                input.form-control(
+                  placeholder="Từ khóa..."
+                  type="text"
+                  name="keyword"
+                  )
+                button.btn.btn-secondary Tìm kiếm
+          .table-responsive
+            table.table.table-striped.mb-0
+              thead.table-light
+                tr
+                  th STT
+                  th Tên danh mục
+                  th Danh mục cha
+                  th Trạng thái
+                  th Lượt xem
+                  th.text-end Hành động
+              tbody
+                if(recordList.length > 0)
+                  each item, index in recordList
+                    tr
+                      td #{pagination.skip + index + 1}
+                      td #{item.name}
+                      td #{item.parentName}
+                      td
+                        if (item.status == "active")
+                          span.badge.bg-success Hoạt động
+                        else if (item.status == "inactive")
+                          span.badge.bg-danger Tạm dừng
+                      td #{item.view}
+                      td.text-end
+                        a(href=`/${pathAdmin}/article/category/edit/${item.id}`)
+                          i.las.la-pen.text-secondary.font-16
+                        a(
+                          href="javascript:;"
+                          button-api
+                          data-method="PATCH"
+                          data-api=`/${pathAdmin}/article/category/delete/${item.id}`
+                          )
+                          i.las.la-trash-alt.text-secondary.font-16
+                else
+                  tr
+                    td(colspan="6" class="text-center") Không tìm thấy dữ liệu
+          .row.mt-3
+            .col-lg-2.col-md-3.col-6
+              select.form-select(pagination)
+                - for (let i = 1; i <= pagination.totalPage; i++)
+                  option(value=i) Trang #{i}
+
     // end col
