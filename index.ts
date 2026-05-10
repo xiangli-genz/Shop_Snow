@@ -5,6 +5,7 @@ import adminRoutes from './routes/admin/index.route';
 import clientRoutes from './routes/client/index.route';
 import { domainCDN, pathAdmin } from './configs/variable.config';
 import { connectDB } from './configs/database.config';
+import cookieParser from "cookie-parser";
 
 //Load biến môi trường
 dotenv.config();
@@ -46,6 +47,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Tạo biến toàn cục trong file pug
 app.locals.pathAdmin = pathAdmin;
 app.locals.domainCDN = domainCDN;
+
+app.use(cookieParser());
 
 app.use(`/${pathAdmin}`, adminRoutes);
 

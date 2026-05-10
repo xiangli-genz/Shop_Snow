@@ -3,9 +3,17 @@ const initialTinyMCE = () => {
   tinymce.init({
     selector: '[textarea-mce]',
     plugins: [
-      'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount', 'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'uploadcare', 'mentions', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+      'accordion', 'anchor', "link", 'autolink', 'autoresize', 'image', 'media'
     ],
-    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+    init_instance_callback: (editor) => {
+      editor.on("OpenWindow", () => {
+        const title = document.querySelector(".tox .tox-dialog__title")?.innerHTML;
+        if(title == "Insert/Edit Media" || title == "Insert/Edit Image") {
+          const inputSource = document.querySelector(`.tox input.tox-textfield[type="url"]`);
+          inputSource.value = domainCDN;
+        }
+      })
+    }
   });
 }
 initialTinyMCE();
@@ -123,6 +131,7 @@ if(articleEditCategoryForm) {
       const slug = event.target.slug.value;
       const parent = event.target.parent.value;
       const status = event.target.status.value;
+      const avatar = event.target.avatar.value;
       const description = tinymce.get("description").getContent();
 
       // Tạo formData
@@ -131,6 +140,7 @@ if(articleEditCategoryForm) {
       formData.append("slug", slug);
       formData.append("parent", parent);
       formData.append("status", status);
+      formData.append("avatar", avatar);
       formData.append("description", description);
 
       fetch(`/${pathAdmin}/article/category/edit/${id}`, {
@@ -573,3 +583,606 @@ if(formGroupFile) {
   }
 }
 // End Form Group File
+
+// Checkbox List
+const getCheckboxList = (name) => {
+  const checkboxList = document.querySelector(`[checkbox-list="${name}"]`);
+  const inputList = checkboxList.querySelectorAll(`input[type="checkbox"]:checked`);
+  const idList = [];
+  inputList.forEach(input => {
+    const id = input.value;
+    if(id) {
+      idList.push(id);
+    }
+  })
+  return idList;
+}
+// End Checkbox List
+
+// Article Create Form
+const articleCreateForm = document.querySelector("#articleCreateForm");
+if(articleCreateForm) {
+  const validation = new JustValidate('#articleCreateForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên bài viết!'
+      }
+    ])
+    .addField('#slug', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập đường dẫn!'
+      }
+    ])
+    .onSuccess((event) => {
+      const name = event.target.name.value;
+      const slug = event.target.slug.value;
+      const category = getCheckboxList("category");
+      const status = event.target.status.value;
+      const avatar = event.target.avatar.value;
+      const description = tinymce.get("description").getContent();
+      const content = tinymce.get("content").getContent();
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("slug", slug);
+      formData.append("category", JSON.stringify(category));
+      formData.append("status", status);
+      formData.append("avatar", avatar);
+      formData.append("description", description);
+      formData.append("content", content);
+      
+      fetch(`/${pathAdmin}/article/create`, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.reload();
+          }
+        })
+    })
+  ;
+}
+// End Article Create Form
+
+// Article Edit Form
+const articleEditForm = document.querySelector("#articleEditForm");
+if(articleEditForm) {
+  const validation = new JustValidate('#articleEditForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên bài viết!'
+      }
+    ])
+    .addField('#slug', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập đường dẫn!'
+      }
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const name = event.target.name.value;
+      const slug = event.target.slug.value;
+      const category = getCheckboxList("category");
+      const status = event.target.status.value;
+      const avatar = event.target.avatar.value;
+      const description = tinymce.get("description").getContent();
+      const content = tinymce.get("content").getContent();
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("slug", slug);
+      formData.append("category", JSON.stringify(category));
+      formData.append("status", status);
+      formData.append("avatar", avatar);
+      formData.append("description", description);
+      formData.append("content", content);
+      
+      fetch(`/${pathAdmin}/article/edit/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    })
+  ;
+}
+// End Article Edit Form
+
+// Role Create Form
+const roleCreateForm = document.querySelector("#roleCreateForm");
+if(roleCreateForm) {
+  const validation = new JustValidate('#roleCreateForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên nhóm quyền!'
+      }
+    ])
+    .onSuccess((event) => {
+      const name = event.target.name.value;
+      const description = event.target.description.value;
+      const permissions = getCheckboxList("permissions");
+      const status = event.target.status.value;
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("permissions", JSON.stringify(permissions));
+      formData.append("status", status);
+      
+      fetch(`/${pathAdmin}/role/create`, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.reload();
+          }
+        })
+    })
+  ;
+}
+// End Role Create Form
+
+// Role Edit Form
+const roleEditForm = document.querySelector("#roleEditForm");
+if(roleEditForm) {
+  const validation = new JustValidate('#roleEditForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên nhóm quyền!'
+      }
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const name = event.target.name.value;
+      const description = event.target.description.value;
+      const permissions = getCheckboxList("permissions");
+      const status = event.target.status.value;
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("permissions", JSON.stringify(permissions));
+      formData.append("status", status);
+      
+      fetch(`/${pathAdmin}/role/edit/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    })
+  ;
+}
+// End Role Edit Form
+
+// Account Admin Create Form
+const accountAdminCreateForm = document.querySelector("#accountAdminCreateForm");
+if(accountAdminCreateForm) {
+  const validation = new JustValidate('#accountAdminCreateForm');
+
+  validation
+    .addField('#fullName', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập họ tên!'
+      },
+      {
+        rule: 'minLength',
+        value: 5,
+        errorMessage: 'Họ tên phải có ít nhất 5 ký tự!',
+      },
+      {
+        rule: 'maxLength',
+        value: 50,
+        errorMessage: 'Họ tên không được vượt quá 50 ký tự!',
+      },
+    ])
+    .addField('#email', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập email của bạn!',
+      },
+      {
+        rule: 'email',
+        errorMessage: 'Email không đúng định dạng!',
+      },
+    ])
+    .addField('#password', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mật khẩu!',
+      },
+      {
+        validator: (value) => value.length >= 8,
+        errorMessage: 'Mật khẩu phải chứa ít nhất 8 ký tự!',
+      },
+      {
+        validator: (value) => /[A-Z]/.test(value),
+        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ cái in hoa!',
+      },
+      {
+        validator: (value) => /[a-z]/.test(value),
+        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ cái thường!',
+      },
+      {
+        validator: (value) => /\d/.test(value),
+        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ số!',
+      },
+      {
+        validator: (value) => /[@$!%*?&]/.test(value),
+        errorMessage: 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt!',
+      },
+    ])
+    .onSuccess((event) => {
+      const fullName = event.target.fullName.value;
+      const email = event.target.email.value;
+      const password = event.target.password.value;
+      const status = event.target.status.value;
+      const avatar = event.target.avatar.value;
+      const roles = getCheckboxList("roles");
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("fullName", fullName);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("status", status);
+      formData.append("avatar", avatar);
+      formData.append("roles", JSON.stringify(roles));
+      
+      fetch(`/${pathAdmin}/account-admin/create`, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.reload();
+          }
+        })
+    })
+  ;
+}
+// End Account Admin Create Form
+
+// Account Admin Edit Form
+const accountAdminEditForm = document.querySelector("#accountAdminEditForm");
+if(accountAdminEditForm) {
+  const validation = new JustValidate('#accountAdminEditForm');
+
+  validation
+    .addField('#fullName', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập họ tên!'
+      },
+      {
+        rule: 'minLength',
+        value: 5,
+        errorMessage: 'Họ tên phải có ít nhất 5 ký tự!',
+      },
+      {
+        rule: 'maxLength',
+        value: 50,
+        errorMessage: 'Họ tên không được vượt quá 50 ký tự!',
+      },
+    ])
+    .addField('#email', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập email của bạn!',
+      },
+      {
+        rule: 'email',
+        errorMessage: 'Email không đúng định dạng!',
+      },
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const fullName = event.target.fullName.value;
+      const email = event.target.email.value;
+      const status = event.target.status.value;
+      const avatar = event.target.avatar.value;
+      const roles = getCheckboxList("roles");
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("fullName", fullName);
+      formData.append("email", email);
+      formData.append("status", status);
+      formData.append("avatar", avatar);
+      formData.append("roles", JSON.stringify(roles));
+      
+      fetch(`/${pathAdmin}/account-admin/edit/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    })
+  ;
+}
+// End Account Admin Edit Form
+
+// Account Admin Change Password Form
+const accountAdminChangePasswordForm = document.querySelector("#accountAdminChangePasswordForm");
+if(accountAdminChangePasswordForm) {
+  const validation = new JustValidate('#accountAdminChangePasswordForm');
+
+  validation
+    .addField('#password', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mật khẩu!',
+      },
+      {
+        validator: (value) => value.length >= 8,
+        errorMessage: 'Mật khẩu phải chứa ít nhất 8 ký tự!',
+      },
+      {
+        validator: (value) => /[A-Z]/.test(value),
+        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ cái in hoa!',
+      },
+      {
+        validator: (value) => /[a-z]/.test(value),
+        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ cái thường!',
+      },
+      {
+        validator: (value) => /\d/.test(value),
+        errorMessage: 'Mật khẩu phải chứa ít nhất một chữ số!',
+      },
+      {
+        validator: (value) => /[@$!%*?&]/.test(value),
+        errorMessage: 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt!',
+      },
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const password = event.target.password.value;
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("password", password);
+      
+      fetch(`/${pathAdmin}/account-admin/change-password/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    })
+  ;
+}
+// End Account Admin Change Password Form
+
+// Account Login Form
+const accountLoginForm = document.querySelector("#accountLoginForm");
+if(accountLoginForm) {
+  const validation = new JustValidate('#accountLoginForm');
+
+  validation
+    .addField('#email', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập email của bạn!',
+      },
+      {
+        rule: 'email',
+        errorMessage: 'Email không đúng định dạng!',
+      },
+    ])
+    .addField('#password', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mật khẩu!',
+      }
+    ])
+    .onSuccess((event) => {
+      const email = event.target.email.value;
+      const password = event.target.password.value;
+      const rememberPassword = event.target.rememberPassword.checked;
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("rememberPassword", rememberPassword);
+      
+      fetch(`/${pathAdmin}/account/login`, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.href = `/${pathAdmin}/dashboard`;
+          }
+        })
+    })
+  ;
+}
+// End Account Login Form
+
+// Product Create Category Form
+const productCreateCategoryForm = document.querySelector("#productCreateCategoryForm");
+if(productCreateCategoryForm) {
+  const validation = new JustValidate('#productCreateCategoryForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên danh mục!'
+      }
+    ])
+    .addField('#slug', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập đường dẫn!'
+      }
+    ])
+    .onSuccess((event) => {
+      const name = event.target.name.value;
+      const slug = event.target.slug.value;
+      const parent = event.target.parent.value;
+      const status = event.target.status.value;
+      const avatar = event.target.avatar.value;
+      const description = tinymce.get("description").getContent();
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("slug", slug);
+      formData.append("parent", parent);
+      formData.append("status", status);
+      formData.append("avatar", avatar);
+      formData.append("description", description);
+      
+      fetch(`/${pathAdmin}/product/category/create`, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.reload();
+          }
+        })
+    })
+  ;
+}
+// End Product Create Category Form
+
+// productEditCategoryForm
+const productEditCategoryForm = document.querySelector("#productEditCategoryForm");
+if(productEditCategoryForm) {
+  const validator = new JustValidate('#productEditCategoryForm');
+
+  validator
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên danh mục!',
+      },
+    ])
+    .addField('#slug', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập đường dẫn!',
+      },
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const name = event.target.name.value;
+      const slug = event.target.slug.value;
+      const parent = event.target.parent.value;
+      const status = event.target.status.value;
+      const avatar = event.target.avatar.value;
+      const description = tinymce.get("description").getContent();
+
+      // Tạo formData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("slug", slug);
+      formData.append("parent", parent);
+      formData.append("status", status);
+      formData.append("avatar", avatar);
+      formData.append("description", description);
+
+      fetch(`/${pathAdmin}/product/category/edit/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    });
+}
+// End productEditCategoryForm
+

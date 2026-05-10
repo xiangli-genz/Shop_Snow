@@ -1,8 +1,15 @@
 import { Request, Response } from 'express';
 import slugify from 'slugify';
-// import CategoryBlog from '../../models/category-blog.model';
+import CategoryBlog from '../../models/category-blog.model';
+import Blog from '../../models/blog.model';
 import { generateRandomString } from '../../helpers/generate.helper';
-import mongoose from 'mongoose';
+import CategoryProduct from '../../models/category-product.model';
+
+const models: any = {
+  CategoryBlog: CategoryBlog,
+  Blog: Blog,
+  CategoryProduct: CategoryProduct
+};
 
 export const generateSlugPost = async (req: Request, res: Response) => {
   try {
@@ -13,7 +20,7 @@ export const generateSlugPost = async (req: Request, res: Response) => {
       strict: true, // Loại bỏ ký tự đặc biệt
     })
 
-    const Model = mongoose.model(modalName);
+    const Model = models[modalName];
 
     const existSlug = await Model.findOne({
       slug: slug

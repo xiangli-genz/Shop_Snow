@@ -50,7 +50,11 @@ export const fileManager = async (req: Request, res: Response) => {
 
   // Danh sách folder
   let folderList = [];
-  const response = await axios.get(`${domainCDN}/file-manager/folder/list?folderPath=${req.query.folderPath}`);
+  const response = await axios.get(`${domainCDN}/file-manager/folder/list?folderPath=${req.query.folderPath}`, {
+    headers: {
+      Authorization: `Bearer ${process.env.FILE_MANAGER_SECRET}`
+    }
+  });
   if(response.data.code == "success") {
     folderList = response.data.folderList;
     for (const item of folderList) {
@@ -86,7 +90,10 @@ export const uploadPost = async (req: Request, res: Response) => {
     }
 
     const response = await axios.post(`${domainCDN}/file-manager/upload`, formData, {
-      headers: formData.getHeaders()
+      headers: {
+        ...formData.getHeaders(),
+        Authorization: `Bearer ${process.env.FILE_MANAGER_SECRET}`
+      }
     });
 
     if(response.data.code == "success") {
@@ -134,7 +141,10 @@ export const changeFileNamePatch = async (req: Request, res: Response) => {
     formData.append("newFileName", newFileName);
 
     const response = await axios.patch(`${domainCDN}/file-manager/change-file-name`, formData, {
-      headers: formData.getHeaders()
+      headers: {
+        ...formData.getHeaders(),
+        Authorization: `Bearer ${process.env.FILE_MANAGER_SECRET}`
+      }
     });
 
     if(response.data.code == "error") {
@@ -185,7 +195,10 @@ export const deleteFileDel = async (req: Request, res: Response) => {
     formData.append("fileName", record.filename);
 
     const response = await axios.patch(`${domainCDN}/file-manager/delete-file`, formData, {
-      headers: formData.getHeaders()
+      headers: {
+        ...formData.getHeaders(),
+        Authorization: `Bearer ${process.env.FILE_MANAGER_SECRET}`
+      }
     });
 
     if(response.data.code == "error") {
@@ -233,7 +246,10 @@ export const createFolderPost = async (req: Request, res: Response) => {
     }
 
     const response = await axios.post(`${domainCDN}/file-manager/folder/create`, formData, {
-      headers: formData.getHeaders()
+      headers: {
+        ...formData.getHeaders(),
+        Authorization: `Bearer ${process.env.FILE_MANAGER_SECRET}`
+      }
     });
 
     if(response.data.code == "error") {
