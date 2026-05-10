@@ -1,4 +1,5 @@
 extends ../layouts/default.pug
+include ../mixins/pagination.pug
 
 block main
   .row
@@ -37,6 +38,7 @@ block main
               thead.table-light
                 tr
                   th STT
+                  th Avatar
                   th Tên danh mục
                   th Danh mục cha
                   th Trạng thái
@@ -47,6 +49,12 @@ block main
                   each item, index in recordList
                     tr
                       td #{pagination.skip + index + 1}
+                      td
+                        if(item.avatar)
+                          img(
+                            src=`${domainCDN}${item.avatar}`
+                            class="rounded thumb-md me-1 d-inline"
+                          )
                       td #{item.name}
                       td #{item.parentName}
                       td
@@ -68,10 +76,6 @@ block main
                 else
                   tr
                     td(colspan="6" class="text-center") Không tìm thấy dữ liệu
-          .row.mt-3
-            .col-lg-2.col-md-3.col-6
-              select.form-select(pagination)
-                - for (let i = 1; i <= pagination.totalPage; i++)
-                  option(value=i) Trang #{i}
+          +pagination()
 
     // end col

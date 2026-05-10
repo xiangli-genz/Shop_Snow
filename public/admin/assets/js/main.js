@@ -63,6 +63,7 @@ if(articleCreateCategoryForm) {
 			const slug = event.target.slug.value;
 			const parent = event.target.parent.value;
       const status = event.target.status.value;
+      const avatar = event.target.avatar.value;
 			const description = tinymce.get("description").getContent();
 
 			//Tọa forrm data
@@ -71,6 +72,7 @@ if(articleCreateCategoryForm) {
 			formData.append('slug', slug);
 			formData.append('parent', parent);
       formData.append('status', status);
+      formData.append('avatar', avatar);
 			formData.append('description', description);
 
 			fetch(`/${pathAdmin}/article/category/create`, {
@@ -258,3 +260,316 @@ if(pagination) {
   }
 }
 // End pagination
+
+// button-copy
+const listButtonCopy = document.querySelectorAll("[button-copy]");
+if(listButtonCopy.length > 0) {
+  listButtonCopy.forEach(button => {
+    button.addEventListener("click", () => {
+      const content = button.getAttribute("data-content");
+      window.navigator.clipboard.writeText(content);
+      notyf.success("Đã copy!");
+    })
+  })
+}
+// End button-copy
+
+// Modal Preview File
+const modalPreviewFile = document.querySelector("#modalPreviewFile");
+if(modalPreviewFile) {
+  const innerPreview = modalPreviewFile.querySelector(".inner-preview");
+
+  // Sự kiện click button
+  let buttonClicked = null;
+
+  const listButtonPreviewFile = document.querySelectorAll("[button-preview-file]");
+  listButtonPreviewFile.forEach(button => {
+    button.addEventListener("click", () => {
+      buttonClicked = button;
+    })
+  })
+
+  // Sự kiện đóng modal
+  modalPreviewFile.addEventListener('hidden.bs.modal', event => {
+    buttonClicked = null;
+    innerPreview.innerHTML = "";
+  })
+
+  // Sự kiện mở modal
+  modalPreviewFile.addEventListener('shown.bs.modal', event => {
+    const file = buttonClicked.getAttribute("data-file");
+    const mimetype = buttonClicked.getAttribute("data-mimetype");
+
+    // Nếu là file ảnh
+    if(mimetype.includes("image")) {
+      innerPreview.innerHTML = `
+        <img src="${file}" width="100%" />
+      `;
+    }
+    else if(mimetype.includes("audio")) {
+      innerPreview.innerHTML = `
+        <audio controls>
+          <source src="${file}" />
+        </audio>
+      `;
+    }
+    else if(mimetype.includes("video")) {
+      innerPreview.innerHTML = `
+        <video controls width="100%">
+          <source src="${file}" />
+        </video>
+      `;
+    }
+    else if(mimetype.includes("application/pdf")) {
+      innerPreview.innerHTML = `
+        <iframe src="${file}" width="100%" height="600px"></iframe>
+      `;
+    }
+  })
+}
+// End Modal Preview File
+
+// Modal Change File Name
+const modalChangeFileName = document.querySelector("#modalChangeFileName");
+if(modalChangeFileName) {
+  const form = modalChangeFileName.querySelector("form");
+
+  // Sự kiện click button
+  let buttonClicked = null;
+
+  const listButtonChangeFileName = document.querySelectorAll("[button-change-file-name]");
+  listButtonChangeFileName.forEach(button => {
+    button.addEventListener("click", () => {
+      buttonClicked = button;
+    })
+  })
+
+  // Sự kiện đóng modal
+  modalChangeFileName.addEventListener('hidden.bs.modal', event => {
+    buttonClicked = null;
+    form.fileId.value = "";
+    form.fileName.value = "";
+  })
+
+  // Sự kiện mở modal
+  modalChangeFileName.addEventListener('shown.bs.modal', event => {
+    const fileId = buttonClicked.getAttribute("data-file-id");
+    const fileName = buttonClicked.getAttribute("data-file-name");
+    form.fileId.value = fileId;
+    form.fileName.value = fileName;
+  })
+
+  // Sự kiện submit form
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const fileId = form.fileId.value;
+    const fileName = form.fileName.value;
+
+    if(fileId && fileName) {
+      // Tạo formData
+      const formData = new FormData();
+      formData.append("fileName", fileName);
+
+      fetch(`/${pathAdmin}/file-manager/change-file-name/${fileId}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify(data.code, data.message);
+            location.reload();
+          }
+        })
+    }
+  })
+}
+// End Modal Change File Name
+
+// Button Delete File
+const listButtonDeleteFile = document.querySelectorAll("[button-delete-file]");
+if(listButtonDeleteFile.length > 0) {
+  listButtonDeleteFile.forEach(button => {
+    button.addEventListener("click", () => {
+      const fileId = button.getAttribute("data-file-id");
+      const fileName = button.getAttribute("data-file-name");
+
+      const isConfirm = confirm(`Bạn có chắc muốn xóa file: ${fileName}`);
+      if(isConfirm) {
+        fetch(`/${pathAdmin}/file-manager/delete-file/${fileId}`, {
+          method: "DELETE"
+        })
+          .then(res => res.json())
+          .then(data => {
+            if(data.code == "error") {
+              notyf.error(data.message);
+            }
+
+            if(data.code == "success") {
+              drawNotify(data.code, data.message);
+              location.reload();
+            }
+          })
+      }
+    })
+  })
+}
+// End Button Delete File
+
+// Form Create Folder
+const formCreateFolder = document.querySelector("[form-create-folder]");
+if(formCreateFolder) {
+  formCreateFolder.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const folderName = event.target.folderName.value;
+    if(!folderName) {
+      notyf.error("Vui lòng nhập tên folder");
+      return;
+    }
+
+    // Tạo formData
+    const formData = new FormData();
+    formData.append("folderName", folderName);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const folderPath = urlParams.get("folderPath");
+    if(folderPath) {
+      formData.append("folderPath", folderPath);
+    }
+
+    fetch(`/${pathAdmin}/file-manager/folder/create`, {
+      method: "POST",
+      body: formData
+    })
+      .then(res => res.json())
+      .then(data => {
+        if(data.code == "error") {
+          notyf.error(data.message);
+        }
+
+        if(data.code == "success") {
+          drawNotify(data.code, data.message);
+          location.reload();
+        }
+      })
+  })
+}
+// End Form Create Folder
+
+// Button To Folder
+const listButtonToFolder = document.querySelectorAll("[button-to-folder]");
+if(listButtonToFolder.length > 0) {
+  const url = new URL(window.location.href);
+
+  listButtonToFolder.forEach(button => {
+    button.addEventListener("click", () => {
+      let folderPath = button.getAttribute("data-folder-path");
+      if(folderPath) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const folderPathCurrent = urlParams.get("folderPath");
+        if(folderPathCurrent) {
+          folderPath = `${folderPathCurrent}/${folderPath}`;
+        }
+        url.searchParams.set("folderPath", folderPath);
+      } else {
+        url.searchParams.delete("folderPath");
+      }
+      window.location.href = url.href;
+    })
+  })
+}
+// End Button To Folder
+
+// Breadcrumb Folder
+const breadcumbFolder = document.querySelector("[breadcumb-folder]");
+if(breadcumbFolder) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const folderPath = urlParams.get("folderPath") || "";
+  const listFolder = folderPath.split("/") || [];
+
+  let htmls = `
+    <li class="list-group-item bg-white">
+      <a href="/${pathAdmin}/file-manager">
+        <i class="la la-angle-double-right text-info me-2"></i>
+        Media
+      </a>
+    </li>
+  `;
+
+  let path = "";
+  listFolder.forEach((item, index) => {
+    path += (index > 0 ? "/" : "") + listFolder[index];
+
+    htmls += `
+      <li class="list-group-item bg-white">
+        <a href="/${pathAdmin}/file-manager?folderPath=${path}">
+          <i class="la la-angle-double-right text-info me-2"></i>
+          ${item}
+        </a>
+      </li>
+    `;
+  });
+  breadcumbFolder.innerHTML = htmls;
+}
+// End Breadcrumb Folder
+
+// Button Delete Folder
+const listButtonDeleteFolder = document.querySelectorAll("[button-delete-folder]");
+if(listButtonDeleteFolder.length > 0) {
+  listButtonDeleteFolder.forEach(button => {
+    button.addEventListener("click", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const folderPath = urlParams.get("folderPath") || "";
+      const folderName = button.getAttribute("data-folder-name");
+      let folderFinal = "/media";
+      if(folderPath) {
+        folderFinal += `/${folderPath}`;
+      }
+      if(folderName) {
+        folderFinal += `/${folderName}`;
+      }
+      const isConfirm = confirm(`Bạn có chắc muốn xóa folder: ${folderName}? Hành động này sẽ không thể khôi phục.`);
+      if(isConfirm) {
+        fetch(`/${pathAdmin}/file-manager/folder/delete?folderPath=${folderFinal}`, {
+          method: "DELETE"
+        })
+          .then(res => res.json())
+          .then(data => {
+            if(data.code == "error") {
+              notyf.error(data.message);
+            }
+
+            if(data.code == "success") {
+              drawNotify("success", data.message);
+              location.reload();
+            }
+          })
+      }
+    })
+  })
+}
+// End Button Delete Folder
+
+// Form Group File
+const formGroupFile = document.querySelector("[form-group-file]");
+if(formGroupFile) {
+  const inputFile = formGroupFile.querySelector("[input-file]");
+  const previewFile = formGroupFile.querySelector("[preview-file]");
+
+  inputFile.addEventListener("input", () => {
+    const value = inputFile.value;
+    previewFile.querySelector("img").src = `${domainCDN}${value}`;
+  })
+
+  // Hiển thị mặc định
+  if(inputFile.value) {
+    const value = inputFile.value;
+    previewFile.querySelector("img").src = `${domainCDN}${value}`;
+  }
+}
+// End Form Group File

@@ -1,12 +1,14 @@
 import { Router } from "express";
-import dashboardRouter from "./dashboard.route";
-import articleRouter from "./article.route";
-import helperRouter from "./helper.route";
+import dashboardRoutes from "./dashboard.route";
+import articleRoutes from "./article.route";
+import helperRoutes from "./helper.route";
+import fileManagerRoutes from "./file-manager.route";
 const router = Router();
 
-router.use('/dashboard', dashboardRouter);
-router.use('/article', articleRouter);
-router.use('/helper', helperRouter);
+router.use('/dashboard', dashboardRoutes);
+router.use('/article', articleRoutes);
+router.use('/helper', helperRoutes);
+router.use('/file-manager', fileManagerRoutes);
 
 export default router;
 
