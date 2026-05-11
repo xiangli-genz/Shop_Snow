@@ -12,6 +12,9 @@ export function buildCategoryTree(categories: any, parentId: string = "") {
       id: category.id,
       name: category.name,
       children: children,
+      avatar: category.avatar,
+      slug: category.slug,
+      status: category.status,
     };
   });
 

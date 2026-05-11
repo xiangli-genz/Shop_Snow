@@ -599,6 +599,41 @@ const getCheckboxList = (name) => {
 }
 // End Checkbox List
 
+// Get Multi File
+const getMultiFile = (name) => {
+  const boxMultiFile = document.querySelector(`[multi-file="${name}"]`);
+  const listImage = boxMultiFile.querySelectorAll(`img[src-relative]`);
+  const listLink = [];
+  listImage.forEach(image => {
+    const link = image.getAttribute("src-relative");
+    if(link) {
+      listLink.push(link);
+    }
+  })
+  return listLink;
+}
+// End Get Multi File
+
+// Option List
+const getOptionList = (name) => {
+  const optionList = document.querySelectorAll(`[box-option="${name}"] .option-list .option-item`);
+  const dataFinal = [];
+
+  optionList.forEach(item => {
+    const label = item.querySelector(".option-label").value;
+    const value = item.querySelector(".option-value").value;
+    if(label && value) {
+      dataFinal.push({
+        label: label,
+        value: value
+      });
+    }
+  })
+  
+  return dataFinal;
+}
+// End Option List
+
 // Article Create Form
 const articleCreateForm = document.querySelector("#articleCreateForm");
 if(articleCreateForm) {
@@ -1186,3 +1221,735 @@ if(productEditCategoryForm) {
 }
 // End productEditCategoryForm
 
+// Product Create Form
+const productCreateForm = document.querySelector("#productCreateForm");
+if(productCreateForm) {
+  const validation = new JustValidate('#productCreateForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên sản phẩm!'
+      }
+    ])
+    .addField('#slug', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập đường dẫn!'
+      }
+    ])
+    .onSuccess((event) => {
+      const name = event.target.name.value;
+      const slug = event.target.slug.value;
+      const position = event.target.position.value;
+      const status = event.target.status.value;
+      const category = getCheckboxList("category");
+      const description = tinymce.get("description").getContent();
+      const content = tinymce.get("content").getContent();
+      const images = getMultiFile("images");
+      const priceOld = event.target.priceOld.value;
+      const priceNew = event.target.priceNew.value;
+      const stock = event.target.stock.value;
+      const attributes = getCheckboxList("attributes");
+
+      // variants
+      const variants = [];
+      const listTr = document.querySelectorAll("[variant-table] tbody tr");
+      listTr.forEach(tr => {
+        const status = tr.querySelector("input.form-check-input").checked;
+        const attributeValue = JSON.parse(tr.querySelector("[attribute-value]").value);
+        let priceOld = tr.querySelector("[price-old]").value;
+        if(priceOld) {
+          priceOld = parseInt(priceOld);
+        }
+        let stock = tr.querySelector("[stock]").value;
+        if(stock) {
+          stock = parseInt(stock);
+        } else {
+          stock = 0;
+        }
+        let priceNew = tr.querySelector("[price-new]").value;
+        if(priceNew) {
+          priceNew = parseInt(priceNew);
+        } else {
+          priceNew = priceOld;
+        }
+        variants.push({
+          status: status,
+          attributeValue: attributeValue,
+          priceOld: priceOld,
+          priceNew: priceNew,
+          stock: stock
+        });
+      })
+      // End variants
+
+      // tags
+      const selectTag = document.querySelector(`select[name="tags"]`);
+      const tags = Array.from(selectTag.selectedOptions).map(option => option.value);
+      // End tags
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("slug", slug);
+      formData.append("position", position);
+      formData.append("status", status);
+      formData.append("category", JSON.stringify(category));
+      formData.append("description", description);
+      formData.append("content", content);
+      formData.append("images", JSON.stringify(images));
+      formData.append("priceOld", priceOld);
+      formData.append("priceNew", priceNew);
+      formData.append("stock", stock);
+      formData.append("attributes", JSON.stringify(attributes));
+      formData.append("variants", JSON.stringify(variants));
+      formData.append("tags", JSON.stringify(tags));
+      
+      fetch(`/${pathAdmin}/product/create`, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.reload();
+          }
+        })
+    })
+  ;
+}
+// End Product Create Form
+
+// Product Edit Form
+const productEditForm = document.querySelector("#productEditForm");
+if(productEditForm) {
+  const validation = new JustValidate('#productEditForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên sản phẩm!'
+      }
+    ])
+    .addField('#slug', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập đường dẫn!'
+      }
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const name = event.target.name.value;
+      const slug = event.target.slug.value;
+      const position = event.target.position.value;
+      const status = event.target.status.value;
+      const category = getCheckboxList("category");
+      const description = tinymce.get("description").getContent();
+      const content = tinymce.get("content").getContent();
+      const images = getMultiFile("images");
+      const priceOld = event.target.priceOld.value;
+      const priceNew = event.target.priceNew.value;
+      const stock = event.target.stock.value;
+      const attributes = getCheckboxList("attributes");
+
+      // variants
+      const variants = [];
+      const listTr = document.querySelectorAll("[variant-table] tbody tr");
+      listTr.forEach(tr => {
+        const status = tr.querySelector("input.form-check-input").checked;
+        const attributeValue = JSON.parse(tr.querySelector("[attribute-value]").value);
+        let priceOld = tr.querySelector("[price-old]").value;
+        if(priceOld) {
+          priceOld = parseInt(priceOld);
+        }
+        let priceNew = tr.querySelector("[price-new]").value;
+        if(priceNew) {
+          priceNew = parseInt(priceNew);
+        } else {
+          priceNew = priceOld;
+        }
+        let stock = tr.querySelector("[stock]").value;
+        if(stock) {
+          stock = parseInt(stock);
+        } else {
+          stock = 0;
+        }
+        variants.push({
+          status: status,
+          attributeValue: attributeValue,
+          priceOld: priceOld,
+          priceNew: priceNew,
+          stock: stock,
+        });
+      })
+      // End variants
+
+      // tags
+      const selectTag = document.querySelector(`select[name="tags"]`);
+      const tags = Array.from(selectTag.selectedOptions).map(option => option.value);
+      // End tags
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("slug", slug);
+      formData.append("position", position);
+      formData.append("status", status);
+      formData.append("category", JSON.stringify(category));
+      formData.append("description", description);
+      formData.append("content", content);
+      formData.append("images", JSON.stringify(images));
+      formData.append("priceOld", priceOld);
+      formData.append("priceNew", priceNew);
+      formData.append("stock", stock);
+      formData.append("attributes", JSON.stringify(attributes));
+      formData.append("variants", JSON.stringify(variants));
+      formData.append("tags", JSON.stringify(tags));
+      
+      fetch(`/${pathAdmin}/product/edit/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    })
+  ;
+}
+// End Product Edit Form
+
+// Checkbox Multi
+const listCheckboxInput = document.querySelectorAll(".checkbox-input");
+if(listCheckboxInput.length > 0) {
+  const inputCheckboxAll = document.querySelector(".checkbox-all");
+
+  inputCheckboxAll.addEventListener("change", () => {
+    listCheckboxInput.forEach(input => {
+      input.checked = inputCheckboxAll.checked;
+    })
+  })
+
+  listCheckboxInput.forEach(input => {
+    input.addEventListener("change", () => {
+      const listCheckboxInputChecked = document.querySelectorAll(".checkbox-input:checked");
+      if(listCheckboxInputChecked.length == listCheckboxInput.length) {
+        inputCheckboxAll.checked = true;
+      } else {
+        inputCheckboxAll.checked = false;
+      }
+    })
+  })
+}
+// End Checkbox Multi
+
+// Button Copy Multi
+const buttonCopyMulti = document.querySelector("[button-copy-multi]");
+if(buttonCopyMulti) {
+  buttonCopyMulti.addEventListener("click", () => {
+    const listCheckboxInputChecked = document.querySelectorAll(".checkbox-input:checked");
+    const listLink = [];
+    listCheckboxInputChecked.forEach(input => {
+      listLink.push(input.value);
+    })
+    navigator.clipboard.writeText(JSON.stringify(listLink));
+    notyf.success("Đã copy!");
+  })
+}
+// End Button Copy Multi
+
+// Button Paste
+const listButtonPaste = document.querySelectorAll("[button-paste]");
+if(listButtonPaste) {
+  listButtonPaste.forEach(buttonPaste => {
+    const elementListImage = buttonPaste.closest(".form-multi-file").querySelector(".inner-list-image");
+
+    buttonPaste.addEventListener("click", async () => {
+      const listLinkJson = await navigator.clipboard.readText();
+      const listLink = JSON.parse(listLinkJson);
+      for (const link of listLink) {
+        elementListImage.insertAdjacentHTML("beforeend", `
+          <div class="inner-image">
+            <img src="${domainCDN}${link}" alt="" src-relative="${link}">
+            <span class="inner-remove">x</span>
+          </div>
+        `);
+      }
+    })
+
+    new Sortable(elementListImage, {
+      animation: 150
+    });
+  })
+}
+// End Button Paste
+
+// Button Remove Image
+const listElementListImage = document.querySelectorAll(".form-multi-file .inner-list-image");
+if(listElementListImage.length > 0) {
+  listElementListImage.forEach(elementListImage => {
+    elementListImage.addEventListener("click", (event) => {
+      if(event.target.closest(".inner-remove")) {
+        const parentItem = event.target.closest(".inner-image");
+        if(parentItem) {
+          parentItem.remove();
+        }
+      }
+    })
+  })
+}
+// End Button Remove Image
+
+// box-option
+const boxOption = document.querySelector("[box-option]");
+if(boxOption) {
+  const optionList = boxOption.querySelector(".option-list");
+  const optionCreate = boxOption.querySelector(".option-create");
+
+  // Tạo option
+  optionCreate.addEventListener("click", () => {
+    const newItem = `
+      <div class="option-item">
+        <span class="btn btn-secondary option-move">
+          <i class="fa-solid fa-up-down-left-right"></i>
+        </span>
+        <input class="form-control option-label" type="text" placeholder="Nhãn">
+        <input class="form-control option-value" type="text" placeholder="Giá trị">
+        <span class="btn btn-danger option-remove">Xóa</span>
+      </div>
+    `;
+    optionList.insertAdjacentHTML("beforeend", newItem);
+  })
+
+  // Xóa option
+  optionList.addEventListener("click", (event) => {
+    if(event.target.closest(".option-remove")) {
+      const parentItem = event.target.closest(".option-item");
+      if(parentItem) {
+        parentItem.remove();
+      }
+    }
+  })
+
+  // Sắp xếp
+  new Sortable(optionList, {
+    animation: 150,
+    handle: '.option-move',
+  });
+}
+// End box-option
+
+// Product Create Attribute Form
+const productCreateAttributeForm = document.querySelector("#productCreateAttributeForm");
+if(productCreateAttributeForm) {
+  const validation = new JustValidate('#productCreateAttributeForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên thuộc tính!'
+      }
+    ])
+    .onSuccess((event) => {
+      const name = event.target.name.value;
+      const type = event.target.type.value;
+      const options = getOptionList("options");
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("type", type);
+      formData.append("options", JSON.stringify(options));
+      
+      fetch(`/${pathAdmin}/product/attribute/create`, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.reload();
+          }
+        })
+    })
+  ;
+}
+// End Product Create Attribute Form
+
+// Product Edit Attribute Form
+const productEditAttributeForm = document.querySelector("#productEditAttributeForm");
+if(productEditAttributeForm) {
+  const validation = new JustValidate('#productEditAttributeForm');
+
+  validation
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên thuộc tính!'
+      }
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const name = event.target.name.value;
+      const type = event.target.type.value;
+      const options = getOptionList("options");
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("type", type);
+      formData.append("options", JSON.stringify(options));
+      
+      fetch(`/${pathAdmin}/product/attribute/edit/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    })
+  ;
+}
+// End Product Edit Attribute Form
+
+// button-render-variant
+const generateVariants = (attributes) => {
+  // Bước 1: Lấy ra danh sách các lựa chọn (options) cho từng thuộc tính
+  const optionList = attributes.map(attribute =>
+    attribute.options.map(option => ({
+      attrId: attribute._id,
+      attrType: attribute.type,
+      label: option.label,
+      value: option.value,
+    }))
+  )
+
+  // Bước 2: Tạo ra tổ hợp các biến thể
+  const variantList = optionList.reduce((a, b) => a.flatMap(x => b.map(y => [...x, y])), [[]]);
+
+  return variantList;
+}
+
+const buttonRenderVariant = document.querySelector("[button-render-variant]");
+if(buttonRenderVariant) {
+  buttonRenderVariant.addEventListener("click", () => {
+    const attr = buttonRenderVariant.getAttribute("button-render-variant");
+    const idList = getCheckboxList(attr);
+    const attributeListChecked = attributeList.filter(item => idList.includes(item._id));
+    const variantList = generateVariants(attributeListChecked);
+    // Lấy ra bảng
+    const variantTable = document.querySelector("[variant-table]");
+
+    // Hiển thị tiêu đề cột
+    const variantHead = variantTable.querySelector("thead tr");
+    let variantHeadHTML = "";
+    variantHeadHTML += `
+      <th scope="col">Trạng thái</th>
+    `;
+    attributeListChecked.forEach(item => {
+      variantHeadHTML += `
+        <th scope="col">${item.name}</th>
+      `;
+    })
+    variantHeadHTML += `
+      <th scope="col">Giá cũ</th>
+      <th scope="col">Giá mới</th>
+      <th scope="col">Còn lại</th>
+    `;
+    variantHead.innerHTML = variantHeadHTML;
+
+    // Hiển thị các hàng
+    const variantBody = variantTable.querySelector("tbody");
+    const priceOld = document.querySelector(`[name="priceOld"]`).value;
+    const priceNew = document.querySelector(`[name="priceNew"]`).value;
+    let variantBodyHTML = "";
+    variantList.forEach(variant => {
+      const variantJSON = JSON.stringify(variant).replaceAll(`"`, `&quot;`);
+      let tr = "<tr>";
+      tr += `
+        <td>
+          <div class="form-check form-switch form-switch-success">
+            <input class="form-check-input" type="checkbox" checked="">
+          </div>
+          <input class="d-none" attribute-value value="${variantJSON}" />
+        </td>
+      `;
+      variant.forEach(item => {
+        tr += `
+          <td>${item.label}</td>
+        `;
+      })
+      tr += `
+        <td>
+          <input class="form-control" type="number" value="${priceOld}" price-old>
+        </td>
+        <td>
+          <input class="form-control" type="number" value="${priceNew}" price-new>
+        </td>
+        <td>
+          <input class="form-control" type="number" stock>
+        </td>
+      `;
+      tr += "</tr>";
+      variantBodyHTML += tr;
+    })
+    variantBody.innerHTML = variantBodyHTML;
+  })
+}
+// End button-render-variant
+
+// select-tag
+const selectTag = document.querySelector("[select-tag]");
+if(selectTag) {
+  new Selectr('[select-tag]', {
+    taggable: true
+  });
+
+  // Ngăn chặn sự kiện submit form
+  const inputTag = document.querySelector(".selectr-tag-input");
+  if(inputTag) {
+    inputTag.addEventListener("keydown", (event) => {
+      if(event.key == "Enter") {
+        event.preventDefault();
+      }
+    });
+  }
+}
+// End select-tag
+
+// formImportExcel
+const formImportExcel = document.querySelector("#formImportExcel");
+if(formImportExcel) {
+  const validation = new JustValidate('#formImportExcel');
+
+  validation
+    .addField('#file', [
+      {
+        rule: 'minFilesCount',
+        value: 1,
+        errorMessage: "Vui lòng chọn file CSV",
+      },
+      {
+        rule: "files",
+        value: {
+          files: {
+            extensions: ['csv'],
+            types: ['text/csv'],
+          },
+        },
+        errorMessage: "Vui lòng chọn đúng loại file CSV",
+      },
+    ])
+    .onSuccess((event) => {
+      const fileInput = event.target.querySelector("#file");
+      const file = fileInput.files[0]; // chỉ lấy 1 file đầu tiên
+      const api = formImportExcel.getAttribute("data-api");
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      fetch(api, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.reload();
+          }
+        })
+    })
+  ;
+}
+// End formImportExcel
+
+// date-range
+const dateRange = document.querySelector("[date-range]");
+if(dateRange) {
+  new DateRangePicker(dateRange, {
+    format: 'dd/mm/yyyy'
+  });
+}
+// End date-range
+
+// Coupon Create Form
+const couponCreateForm = document.querySelector("#couponCreateForm");
+if(couponCreateForm) {
+  const validation = new JustValidate('#couponCreateForm');
+
+  validation
+    .addField('#code', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mã giảm giá!'
+      }
+    ])
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên mã giảm giá!'
+      }
+    ])
+    .onSuccess((event) => {
+      const code = event.target.code.value;
+      const name = event.target.name.value;
+      const typeDiscount = event.target.typeDiscount.value;
+      const value = event.target.value.value;
+      const minOrderValue = event.target.minOrderValue.value;
+      const maxDiscountValue = event.target.maxDiscountValue.value;
+      const usageLimit = event.target.usageLimit.value;
+      const typeDisplay = event.target.typeDisplay.value;
+      const status = event.target.status.value;
+      const startDate = event.target.startDate.value;
+      const endDate = event.target.endDate.value;
+      const description = tinymce.get("description").getContent();
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("code", code);
+      formData.append("name", name);
+      formData.append("typeDiscount", typeDiscount);
+      formData.append("value", value);
+      formData.append("minOrderValue", minOrderValue);
+      formData.append("maxDiscountValue", maxDiscountValue);
+      formData.append("usageLimit", usageLimit);
+      formData.append("typeDisplay", typeDisplay);
+      formData.append("status", status);
+      formData.append("startDate", startDate);
+      formData.append("endDate", endDate);
+      formData.append("description", description);
+      
+      fetch(`/${pathAdmin}/coupon/create`, {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            drawNotify("success", data.message);
+            location.reload();
+          }
+        })
+    })
+  ;
+}
+// End Coupon Create Form
+
+// Coupon Edit Form
+const couponEditForm = document.querySelector("#couponEditForm");
+if(couponEditForm) {
+  const validation = new JustValidate('#couponEditForm');
+
+  validation
+    .addField('#code', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập mã giảm giá!'
+      }
+    ])
+    .addField('#name', [
+      {
+        rule: 'required',
+        errorMessage: 'Vui lòng nhập tên mã giảm giá!'
+      }
+    ])
+    .onSuccess((event) => {
+      const id = event.target.id.value;
+      const code = event.target.code.value;
+      const name = event.target.name.value;
+      const typeDiscount = event.target.typeDiscount.value;
+      const value = event.target.value.value;
+      const minOrderValue = event.target.minOrderValue.value;
+      const maxDiscountValue = event.target.maxDiscountValue.value;
+      const usageLimit = event.target.usageLimit.value;
+      const typeDisplay = event.target.typeDisplay.value;
+      const status = event.target.status.value;
+      const startDate = event.target.startDate.value;
+      const endDate = event.target.endDate.value;
+      const description = tinymce.get("description").getContent();
+
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append("code", code);
+      formData.append("name", name);
+      formData.append("typeDiscount", typeDiscount);
+      formData.append("value", value);
+      formData.append("minOrderValue", minOrderValue);
+      formData.append("maxDiscountValue", maxDiscountValue);
+      formData.append("usageLimit", usageLimit);
+      formData.append("typeDisplay", typeDisplay);
+      formData.append("status", status);
+      formData.append("startDate", startDate);
+      formData.append("endDate", endDate);
+      formData.append("description", description);
+      
+      fetch(`/${pathAdmin}/coupon/edit/${id}`, {
+        method: "PATCH",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if(data.code == "error") {
+            notyf.error(data.message);
+          }
+
+          if(data.code == "success") {
+            notyf.success(data.message);
+          }
+        })
+    })
+  ;
+}
+// End Coupon Edit Form
+
+// format-money
+const listFormatMoney = document.querySelectorAll("[format-money]");
+if(listFormatMoney.length > 0) {
+  listFormatMoney.forEach(input => {
+    input.addEventListener("input", () => {
+      let value = input.value;
+      value = value.replace(/\./g, '');
+      value = parseInt(value);
+      const valueFomat = value.toLocaleString("vi-VN");
+      input.value = valueFomat;
+    })
+  })
+}
+// End format-money
