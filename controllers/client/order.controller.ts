@@ -6,6 +6,11 @@ import AttributeProduct from '../../models/attribute-product.model';
 import Coupon from '../../models/coupon.model';
 import { getInfoAddress } from '../../helpers/location.helper';
 import axios from 'axios';
+import moment from 'moment';
+import hmacSHA256 from 'crypto-js/hmac-sha256';
+import { renderFile } from 'pug';
+import puppeteer from 'puppeteer';
+import fs from "fs";
 
 export const createPost = async (req: Request, res: Response) => {
   const dataFinal: any = {};
@@ -246,7 +251,7 @@ export const createPost = async (req: Request, res: Response) => {
   })
 }
 
-export const success = (req: Request, res: Response) => {
+export const success = async (req: Request, res: Response) => {
   const { orderCode, phone } = req.query;
 
   if(!orderCode || !phone) {
@@ -254,11 +259,11 @@ export const success = (req: Request, res: Response) => {
     return;
   }
 
-  const orderDetail: any = Order.findOne({
+  const orderDetail: any = await Order.findOne({
     code: orderCode,
     phone: phone,
     deleted: false
-  });
+  } as any);
 
   if(!orderDetail) {
     res.redirect("/");
@@ -267,6 +272,252 @@ export const success = (req: Request, res: Response) => {
   
   res.render("client/pages/order-success", {
     pageTitle: "Đặt hàng thành công!",
-    orderCode: orderCode
+    orderCode: orderCode,
+    phone: phone
   });
+}
+
+export const paymentZaloPay = async (req: Request, res: Response) => {
+  const { orderCode, phone } = req.query;
+
+  const orderDetail = await Order.findOne({
+    code: orderCode,
+    phone: phone,
+    deleted: false
+  } as any)
+
+  if(!orderDetail) {
+    res.redirect("/");
+    return;
+  }
+
+  const config = {
+    app_id: `${process.env.ZALOPAY_APPID}`,
+    key1: `${process.env.ZALOPAY_KEY1}`,
+    key2: `${process.env.ZALOPAY_KEY2}`,
+    endpoint: `${process.env.ZALOPAY_DOMAIN}/v2/create`
+  };
+
+  const embed_data = {
+    redirecturl: `${process.env.DOMAIN_WEBSITE}/order/success?orderCode=${orderCode}&phone=${phone}`
+  };
+
+  const items = [{}];
+  const transID = Math.floor(Math.random() * 1000000);
+  const order = {
+    app_id: config.app_id,
+    app_trans_id: `${moment().format('YYMMDD')}_${transID}`, // translation missing: vi.docs.shared.sample_code.comments.app_trans_id
+    app_user: `${phone}-${orderCode}`,
+    app_time: Date.now(), // miliseconds
+    item: JSON.stringify(items),
+    embed_data: JSON.stringify(embed_data),
+    amount: orderDetail.total,
+    description: `Thanh toán đơn hàng ${orderCode}`,
+    bank_code: "",
+    mac: "",
+    callback_url: `${process.env.DOMAIN_WEBSITE}/order/payment-zalopay-result`
+  };
+
+  // appid|app_trans_id|appuser|amount|apptime|embeddata|item
+  const data = config.app_id + "|" + order.app_trans_id + "|" + order.app_user + "|" + order.amount + "|" + order.app_time + "|" + order.embed_data + "|" + order.item;
+  order.mac = hmacSHA256(data, config.key1).toString();
+
+  const response = await axios.post(config.endpoint, null, { params: order });
+  res.redirect(response.data.order_url);
+}
+
+export const paymentZalopayResult = async (req: Request, res: Response) => {
+  const config = {
+    key2: `${process.env.ZALOPAY_KEY2}`
+  };
+  
+  let result: any = {};
+
+  try {
+    let dataStr = req.body.data;
+    let reqMac = req.body.mac;
+
+    let mac = hmacSHA256(dataStr, config.key2).toString();
+
+    // kiểm tra callback hợp lệ (đến từ ZaloPay server)
+    if (reqMac !== mac) {
+      // callback không hợp lệ
+      result.return_code = -1;
+      result.return_message = "mac not equal";
+    }
+    else {
+      // thanh toán thành công
+      // merchant cập nhật trạng thái cho đơn hàng
+      let dataJson = JSON.parse(dataStr);
+
+      // Cập nhật trạng thái đơn hàng
+      const [phone, orderCode] = dataJson.app_user.split("-");
+      await Order.updateOne({
+        phone: phone,
+        code: orderCode,
+        deleted: false
+      }, {
+        paymentStatus: "paid"
+      });
+
+      result.return_code = 1;
+      result.return_message = "success";
+    }
+  } catch (ex: any) {
+    result.return_code = 0; // ZaloPay server sẽ callback lại (tối đa 3 lần)
+    result.return_message = ex.message;
+  }
+
+  // thông báo kết quả cho ZaloPay server
+  res.json(result);
+}
+
+export const paymentVNPay = async (req: Request, res: Response) => {
+  const { orderCode, phone } = req.query;
+
+  const orderDetail = await Order.findOne({
+    code: orderCode,
+    phone: phone,
+    deleted: false
+  } as any)
+
+  if(!orderDetail) {
+    res.redirect("/");
+    return;
+  }
+
+  let date = new Date();
+  let createDate = moment(date).format('YYYYMMDDHHmmss');
+  
+  let ipAddr = req.headers['x-forwarded-for'] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress;
+  
+  let tmnCode = `${process.env.VNPAY_TMN_CODE}`;
+  let secretKey = `${process.env.VNPAY_HASH_SECRET}`;
+  let vnpUrl = `${process.env.VNPAY_URL}`;
+  let returnUrl = `${process.env.DOMAIN_WEBSITE}/order/payment-vnpay-result`;
+  let orderId = `${phone}-${orderCode}-${Date.now()}`;
+  let amount = orderDetail.total || 0;
+  let bankCode = "";
+  
+  let locale = 'vn';
+  let currCode = 'VND';
+  let vnp_Params: any = {};
+  vnp_Params['vnp_Version'] = '2.1.0';
+  vnp_Params['vnp_Command'] = 'pay';
+  vnp_Params['vnp_TmnCode'] = tmnCode;
+  vnp_Params['vnp_Locale'] = locale;
+  vnp_Params['vnp_CurrCode'] = currCode;
+  vnp_Params['vnp_TxnRef'] = orderId;
+  vnp_Params['vnp_OrderInfo'] = 'Thanh toan cho ma GD:' + orderId;
+  vnp_Params['vnp_OrderType'] = 'other';
+  vnp_Params['vnp_Amount'] = amount * 100;
+  vnp_Params['vnp_ReturnUrl'] = returnUrl;
+  vnp_Params['vnp_IpAddr'] = ipAddr;
+  vnp_Params['vnp_CreateDate'] = createDate;
+  if(bankCode !== null && bankCode !== ''){
+    vnp_Params['vnp_BankCode'] = bankCode;
+  }
+
+  vnp_Params = sortObject(vnp_Params);
+
+  let querystring = require('qs');
+  let signData = querystring.stringify(vnp_Params, { encode: false });
+  let crypto = require("crypto");     
+  let hmac = crypto.createHmac("sha512", secretKey);
+  let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex"); 
+  vnp_Params['vnp_SecureHash'] = signed;
+  vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
+
+  res.redirect(vnpUrl);
+}
+
+export const paymentVNPayResult = async (req: Request, res: Response) => {
+  let vnp_Params = req.query;
+
+  let secureHash = vnp_Params['vnp_SecureHash'];
+
+  delete vnp_Params['vnp_SecureHash'];
+  delete vnp_Params['vnp_SecureHashType'];
+
+  vnp_Params = sortObject(vnp_Params);
+
+  let secretKey = `${process.env.VNPAY_HASH_SECRET}`;
+
+  let querystring = require('qs');
+  let signData = querystring.stringify(vnp_Params, { encode: false });
+  let crypto = require("crypto");     
+  let hmac = crypto.createHmac("sha512", secretKey);
+  let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");     
+
+  if(secureHash === signed){
+    const [ phone, orderCode ] = (vnp_Params['vnp_TxnRef'] as string).split('-');
+    await Order.findOneAndUpdate({
+      phone: phone,
+      code: orderCode,
+      deleted: false
+    }, {
+      paymentStatus: 'paid'
+    })
+
+    res.redirect(`${process.env.DOMAIN_WEBSITE}/order/success?orderCode=${orderCode}&phone=${phone}`);
+  } else{
+    res.render('success', {code: '97'})
+  }
+}
+
+export const exportPdf = async (req: Request, res: Response) => {
+  const { orderCode, phone } = req.query;
+  
+  const orderDetail = await Order.findOne({
+    code: orderCode,
+    phone: phone,
+    deleted: false
+  } as any);
+
+  if(!orderDetail) {
+    res.redirect("/");
+    return;
+  }
+
+  const css = fs.readFileSync("public/client/assets/css/invoice.css", "utf8");
+
+  // Render PUG sang HTML
+  const renderedHtml = await renderFile('views/client/pages/invoice.pug', {
+    orderDetail: orderDetail
+  });
+
+  const html = `
+    <style>${css}</style>
+    ${renderedHtml}
+  `;
+  
+  // Tạo PDF từ HTML sử dụng Puppeteer
+  const browser = await puppeteer.launch(); // Mở trình duyệt ẩn
+  const page = await browser.newPage(); // Mở tab mới
+  await page.setContent(html, { waitUntil: 'load' }); // Đặt nội dung HTML
+  const pdfBuffer = await page.pdf({ format: 'A4' }); // Tạo PDF dưới dạng buffer
+  await browser.close(); // Đóng trình duyệt
+
+  // Gửi file PDF về client
+  res.setHeader('Content-Type', 'application/pdf'); // Thiết lập header để trình duyệt nhận biết đây là file PDF
+  res.setHeader('Content-Disposition', `attachment; filename=invoice_${orderCode}.pdf`); // Thiết lập tên file khi tải về
+  res.send(pdfBuffer); // Gửi buffer PDF về client
+}
+
+function sortObject(obj: any) {
+  let sorted: any = {};
+  let str: string[] = [];
+  for (let key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      str.push(encodeURIComponent(key));
+    }
+  }
+  str.sort();
+  for (let i = 0; i < str.length; i++) {
+    const decodedKey = decodeURIComponent(str[i]);
+    sorted[str[i]] = encodeURIComponent(obj[decodedKey]).replace(/%20/g, "+");
+  }
+  return sorted;
 }

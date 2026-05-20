@@ -140,7 +140,7 @@ export const productByCategory = async (req: Request, res: Response) => {
       page = currentPage;
     }
   }
-  const totalRecord = await Product.countDocuments(find);
+  const totalRecord = await Product.countDocuments(find as any);
   const totalPage = Math.ceil(totalRecord/limitItems);
   const skip = (page - 1) * limitItems;
   const pagination = {
@@ -180,7 +180,7 @@ export const productByCategory = async (req: Request, res: Response) => {
   // Hết Sắp xếp
 
   const productList: any = await Product
-    .find(find)
+    .find(find as any)
     .limit(limitItems)
     .skip(skip)
     .sort(sort)
@@ -231,7 +231,7 @@ export const suggest = async (req: Request, res: Response) => {
   // Hết Từ khóa
 
   const productList = await Product
-    .find(find)
+    .find(find as any)
     .limit(5)
     .sort({
       position: "desc"

@@ -4,6 +4,7 @@ import Blog from '../../models/blog.model';
 import moment from 'moment';
 import AccountAdmin from '../../models/account-admin.model';
 
+
 export const articleByCategory = async (req: Request, res: Response) => {
   try {
     const categoryDetail = await CategoryBlog.findOne({
@@ -17,11 +18,7 @@ export const articleByCategory = async (req: Request, res: Response) => {
       return;
     }
 
-    const find: {
-      category: string,
-      status: string,
-      deleted: boolean
-    } = {
+    const find = {
       category: categoryDetail.id,
       status: "published",
       deleted: false
@@ -36,7 +33,7 @@ export const articleByCategory = async (req: Request, res: Response) => {
         page = currentPage;
       }
     }
-    const totalRecord = await Blog.countDocuments(find);
+    const totalRecord = await Blog.countDocuments(find as any);
     const totalPage = Math.ceil(totalRecord/limitItems);
     const skip = (page - 1) * limitItems;
     const pagination = {
@@ -46,7 +43,7 @@ export const articleByCategory = async (req: Request, res: Response) => {
     // Hết Phân trang
 
     const articleList: any = await Blog
-      .find(find)
+      .find(find as any)
       .limit(limitItems)
       .skip(skip)
       .sort({

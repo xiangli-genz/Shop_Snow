@@ -678,12 +678,7 @@ const drawCart = () => {
             }
           }
 
-          let pointDiscount = 0;
-          if(data.point && data.point.canUsePoint) {
-            pointDiscount = data.point.canUsePoint * data.point.POINT_TO_MONEY;
-          }
-
-          let total = subTotal + shippingFee - discount - pointDiscount;
+          let total = subTotal + shippingFee - discount;
 
           const ulMiniCart = miniCart.querySelector(".offcanvas-body ul");
           ulMiniCart.innerHTML = htmlMiniCart;
@@ -706,11 +701,6 @@ const drawCart = () => {
           const elementDiscount = document.querySelector("[discount]");
           if(elementDiscount) {
             elementDiscount.innerHTML = discount.toLocaleString("vi-VN");
-          }
-
-          const elementPointDiscount = document.querySelector("[point-discount]");
-          if(elementPointDiscount) {
-            elementPointDiscount.innerHTML = pointDiscount.toLocaleString("vi-VN");
           }
 
           const elementTotal = document.querySelector("[total]");
@@ -2435,9 +2425,6 @@ if(applyCouponForm) {
 // Checkout Page
 const checkoutPage = document.querySelector(".checkout_page");
 if(checkoutPage) {
-  // Hiển thị giỏ hàng khi vào checkout page
-  drawCart();
-  
   const listInputUserAddress = checkoutPage.querySelectorAll(`input[name="userAddress"]`);
 
   const collapseEl = checkoutPage.querySelector("#collapseThree");
@@ -2557,17 +2544,18 @@ if(buttonOrder) {
           // Xóa mã giảm giá
           sessionStorage.removeItem("couponDetail");
 
-          switch (dataPaymentMethod) {
+		  switch (dataPaymentMethod) {
             case "money":
-              // Chuyển sang trang Đặt hàng thành công
-              drawNotify(data.code, data.message);
-              window.location.href = `/order/success?orderCode=${data.orderCode}&phone=${data.phone}`;
-              break;
+
+          // Chuyển sang trang Đặt hàng thành công
+          drawNotify(data.code, data.message);
+          window.location.href = `/order/success?orderCode=${data.orderCode}&phone=${data.phone}`;
+		  break;
             case "zalopay":
               // Chuyển sang trang thanh toán bằng ZaloPay
               window.location.href = `/order/payment-zalopay?orderCode=${data.orderCode}&phone=${data.phone}`;
               break;
-            case "vnpay":
+			case "vnpay":
               // Chuyển sang trang thanh toán bằng VNPay
               window.location.href = `/order/payment-vnpay?orderCode=${data.orderCode}&phone=${data.phone}`;
               break;
@@ -2677,51 +2665,3 @@ if(listButtonReview.length > 0) {
   })
 }
 // Hết Viết đánh giá
-
-// filterRating
-const listInputFilterRating = document.querySelectorAll(`.sidebar_rating input[name="rating"]`);
-if(listInputFilterRating.length > 0) {
-  const url = new URL(window.location.href);
-
-  listInputFilterRating.forEach(input => {
-    input.addEventListener("change", () => {
-      const listInputChecked = document.querySelectorAll(`.sidebar_rating input[name="rating"]:checked`);
-      if(listInputChecked.length > 0) {
-        const listValue = [];
-        listInputChecked.forEach(input => {
-          listValue.push(input.value);
-        });
-        url.searchParams.set("rating", listValue.join(","));
-      } else {
-        url.searchParams.delete("rating");
-      }
-      window.location.href = url.href;
-    })
-  })
-
-  // Hiển thị lựa chọn mặc định
-  const rating = url.searchParams.get("rating");
-  if(rating) {
-    const listRating = rating.split(",");
-    listRating.forEach(item => {
-      const input = document.querySelector(`.sidebar_rating input[name="rating"][value="${item}"]`);
-      if(input) {
-        input.checked = true;
-      }
-    })
-  }
-}
-// End filterRating
-
-// Khởi tạo tính năng dịch
-const gtranslateWrapper = document.querySelector(".gtranslate_wrapper");
-if(gtranslateWrapper) {
-  window.gtranslateSettings = {
-    "default_language":"vi",
-    "native_language_names":true,
-    "wrapper_selector":".gtranslate_wrapper",
-    "flag_size":24,
-    "switcher_horizontal_position":"inline"
-  }
-}
-// Hết Khởi tạo tính năng dịch
