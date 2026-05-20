@@ -6,6 +6,10 @@ import clientRoutes from './routes/client/index.route';
 import { domainCDN, pathAdmin } from './configs/variable.config';
 import { connectDB } from './configs/database.config';
 import cookieParser from "cookie-parser";
+import session from "express-session";
+import passport from "passport";
+import { configureGooglePassport } from './configs/googleOauth.config';
+import { configureFacebookPassport } from './configs/facebookOauth.config';
 
 //Load biến môi trường
 dotenv.config();
@@ -49,6 +53,19 @@ app.locals.pathAdmin = pathAdmin;
 app.locals.domainCDN = domainCDN;
 
 app.use(cookieParser());
+
+// Cấu hình session
+app.use(session({
+  secret: `${process.env.SESSION_SECRET}`,
+  resave: false,
+  saveUninitialized: true,
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+configureGooglePassport(passport);
+configureFacebookPassport(passport);
 
 app.use(`/${pathAdmin}`, adminRoutes);
 

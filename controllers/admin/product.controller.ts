@@ -8,6 +8,7 @@ import { logAdminAction } from '../../helpers/log.helper';
 import AttributeProduct from '../../models/attribute-product.model';
 import { Parser } from 'json2csv';
 import Papa from 'papaparse';
+import { generateRandomString } from '../../helpers/generate.helper';
 
 export const category = async (req: Request, res: Response) => {
   const find: {
@@ -212,10 +213,24 @@ export const create = async (req: Request, res: Response) => {
     deleted: false
   });
 
+  // Danh sách sản phẩm
+  const productList = await Product
+    .find({
+      deleted: false,
+      status: "active"
+    })
+    .sort({
+      position: "desc"
+    })
+    .select("id name")
+    .lean();
+  // Hết Danh sách sản phẩm
+
   res.render("admin/pages/product-create", {
     pageTitle: "Tạo sản phẩm",
     categoryList: categoryTree,
-    attributeList: attributeList
+    attributeList: attributeList,
+    productList: productList
   });
 }
 
@@ -264,8 +279,10 @@ export const createPost = async (req: Request, res: Response) => {
 
     if(req.body.priceNew) {
       req.body.priceNew = parseInt(req.body.priceNew);
+      req.body.discount = Math.floor(((req.body.priceOld - req.body.priceNew) / req.body.priceOld) * 100);
     } else {
       req.body.priceNew = req.body.priceOld;
+      req.body.discount = 0;
     }
 
     if(req.body.stock) {
@@ -277,6 +294,10 @@ export const createPost = async (req: Request, res: Response) => {
     req.body.variants = JSON.parse(req.body.variants);
 
     req.body.tags = JSON.parse(req.body.tags);
+
+    req.body.boughtTogether = JSON.parse(req.body.boughtTogether);
+
+    req.body.sku = generateRandomString(10).toUpperCase();
 
     const newRecord = new Product(req.body);
     await newRecord.save();
@@ -379,12 +400,27 @@ export const edit = async (req: Request, res: Response) => {
       }
     });
 
+    // Danh sách sản phẩm
+    const productList = await Product
+      .find({
+        _id: { $ne: productDetail.id },
+        deleted: false,
+        status: "active"
+      })
+      .sort({
+        position: "desc"
+      })
+      .select("id name")
+      .lean();
+    // Hết Danh sách sản phẩm
+
     res.render("admin/pages/product-edit", {
       pageTitle: "Chỉnh sửa sản phẩm",
       categoryList: categoryTree,
       attributeList: attributeList,
       productDetail: productDetail,
-      attributeNameList: attributeNameList
+      attributeNameList: attributeNameList,
+      productList: productList
     });
   } catch (error) {
     console.log(error);
@@ -453,8 +489,10 @@ export const editPatch = async (req: Request, res: Response) => {
 
     if(req.body.priceNew) {
       req.body.priceNew = parseInt(req.body.priceNew);
+      req.body.discount = Math.floor(((req.body.priceOld - req.body.priceNew) / req.body.priceOld) * 100);
     } else {
       req.body.priceNew = req.body.priceOld;
+      req.body.discount = 0;
     }
 
     if(req.body.stock) {
@@ -466,6 +504,12 @@ export const editPatch = async (req: Request, res: Response) => {
     req.body.variants = JSON.parse(req.body.variants);
 
     req.body.tags = JSON.parse(req.body.tags);
+
+    req.body.boughtTogether = JSON.parse(req.body.boughtTogether);
+
+    if(!productDetail.sku) {
+      req.body.sku = generateRandomString(10).toUpperCase();
+    }
 
     await Product.updateOne({
       _id: id,

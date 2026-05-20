@@ -3,12 +3,17 @@ import mongoose from "mongoose";
 const schema = new mongoose.Schema(
   {
     name: String,
+    sku: String,
     slug: String,
     position: Number,
     category: [String],
     images: [String],
     priceOld: Number,
     priceNew: Number,
+    discount: {
+      type: Number,
+      default: 0
+    },
     stock: Number,
     attributes: Array,
     variants: Array,
@@ -25,6 +30,7 @@ const schema = new mongoose.Schema(
     },
     search: String,
     tags: [String],
+    boughtTogether: [String],
     deleted: {
       type: Boolean,
       default: false

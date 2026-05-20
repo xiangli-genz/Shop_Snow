@@ -39,7 +39,7 @@ CSS INDEX
 /*===========================
     GLOBAL CSS START
 ===========================*/
-@import url('https://fonts.googleapis.com/css2?family=Libertinus+Sans:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libertinus+Sans:ital,wght@0,400;0,700;1,400&family=Roboto:ital,wght@0,400;0,700&family=Oregano&display=swap');
 
 * {
     margin: 0;
@@ -143,8 +143,8 @@ button {
     --lightBg: #edf5ff;
     --lightBg2: #F5F5F5;
     --headingFont: "Libertinus Sans", sans-serif;
-    --bodyFont: "Roboto", serif;
-    --cursiveFont: "Oregano", serif;
+    --bodyFont: "Roboto", sans-serif;
+    --cursiveFont: "Oregano", cursive;
     --ratingColor: #F9A61C;
     --boxShadow: rgb(149 157 165 / 16%) 0px 3px 22px;
 }
@@ -679,6 +679,15 @@ header form .select2-container--default .select2-selection--single .select2-sele
 
 header form .input {
     width: 65%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+header form .input .inner-voice {
+    margin-left: 20px;
+    font-size: 20px;
+    cursor: pointer;
 }
 
 header form input {
@@ -686,6 +695,7 @@ header form input {
     padding: 14px 20px;
     font-size: 14px;
     background: none;
+    flex: 1;
 }
 
 header form button {
@@ -8068,9 +8078,9 @@ footer {
     font-size: 16px;
 }
 
-.product_page_sorting .select_js.show {
+/* .product_page_sorting .select_js.show {
     width: 130px;
-}
+} */
 
 .product_page_sorting .nice-select {
     width: 180px;
@@ -8225,6 +8235,10 @@ footer {
     -o-border-radius: 16px;
 }
 
+.details_slider_thumb_item img {
+    object-fit: contain !important;
+}
+
 .shop_details_text {
     padding: 0px 50px;
 }
@@ -8351,7 +8365,7 @@ footer {
 .details_variant_size li {
     height: 25px;
     line-height: 25px;
-    width: 45px;
+    padding: 0 8px;
     background: var(--lightBg2);
     text-align: center;
     text-transform: uppercase;
@@ -8492,7 +8506,7 @@ footer {
     text-transform: capitalize;
 }
 
-.details_tags_sku li span {
+.details_tags_sku li span, .details_tags_sku li a {
     color: var(--colorBlack);
     font-size: 15px;
     margin-right: 5px;
@@ -9067,6 +9081,13 @@ footer {
     border: none;
     font-size: 14px;
     padding: 15px 20px;
+}
+
+.single_input .just-validate-error-label {
+    position: absolute;
+    font-size: 11px;
+    bottom: 0;
+    left: 20px;
 }
 
 .single_review_input_area form button {
@@ -9960,6 +9981,19 @@ footer {
     -moz-border-radius: 8px;
     -ms-border-radius: 8px;
     -o-border-radius: 8px;
+}
+
+.checkout_single_address {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkout_single_address .inner-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 16px;
 }
 
 .checkout_single_address .form-check input {
@@ -12185,3 +12219,77 @@ footer {
 /*===========================
     DASHBOARD END
 ===========================*/
+
+/* .header_2 form */
+.header_2 form .inner-suggest {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    z-index: 999;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    padding: 8px 0;
+    line-height: 1.4;
+}
+
+.header_2 form .inner-suggest .inner-title {
+    background-color: #f3f3f3;
+    color: #1d1d20;
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.header_2 form .inner-suggest .inner-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px;
+}
+
+.header_2 form .inner-suggest .inner-item:hover {
+    background-color: #f3f3f3;
+}
+
+.header_2 form .inner-suggest .inner-item .inner-image {
+    width: 60px !important;
+    aspect-ratio: 1/1;
+    object-fit: contain !important;
+}
+
+.header_2 form .inner-suggest .inner-item .inner-info {
+    flex: 1;
+}
+
+.header_2 form .inner-suggest .inner-item .inner-name {
+    font-size: 12px;
+    font-weight: 600;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    display: -webkit-box;
+    overflow: hidden;
+    color: #1d1d20;
+}
+
+.header_2 form .inner-suggest .inner-item .inner-prices {
+    display: flex;
+    align-items: center;
+    gap: 5px 10px;
+    flex-wrap: wrap;
+}
+
+.header_2 form .inner-suggest .inner-item .inner-price-new {
+    color: #db003b;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.header_2 form .inner-suggest .inner-item .inner-price-old {
+    color: #777;
+    font-size: 12px;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+/* End .header_2 form */

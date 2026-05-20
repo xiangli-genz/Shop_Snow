@@ -57,6 +57,35 @@ $(function () {
     //======NICE SELECT=======
     $('.select_js').niceSelect();
 
+    // selectJS
+    const listSelectJS = document.querySelectorAll("[select-js]");
+    if(listSelectJS.length > 0) {
+        listSelectJS.forEach(selectJS => {
+        const url = new URL(window.location.href);
+        const feildName = selectJS.getAttribute("select-js");
+
+        selectJS.addEventListener("click", (event) => {
+            if (event.target.classList.contains("option")) {
+                const value = event.target.getAttribute("data-value");
+                if (value) {
+                    url.searchParams.set(feildName, value);
+                } else {
+                    url.searchParams.delete(feildName);
+                }
+                window.location.href = url.href;
+            }
+        });
+
+        // Hiển thị lựa chọn mặc định
+        const currentValue = url.searchParams.get(feildName);
+        if (currentValue) {
+            selectJS.querySelector(".show").value = currentValue;
+            $('.show.select_js').niceSelect('update');
+        }
+    })
+    }
+    // End selectJS
+
 
     //=====WOW JS====== 
     new WOW().init();
@@ -697,14 +726,51 @@ $(function () {
 
     //=====RANGE SLIDER===== 
     $('.basic').alRangeSlider();
-    const options = {
-        range: { min: 0, max: 1000, step: 1 },
-        initialSelectedValues: { from: 100, to: 500 },
-        grid: { minTicksStep: 1, marksStep: 5 },
-        theme: "dark",
-    };
+
+    // range_slider
+    const rangeSlider = document.querySelector(".range_slider");
+    if(rangeSlider) {
+        const url = new URL(window.location.href);
+
+        // Hiển thị giá trị mặc định
+        const initialSelectedValues = {
+            from: 0, 
+            to: 50000000
+        };
+        const valueCurrent = url.searchParams.get("price");
+        if(valueCurrent) {
+            const [from, to] = valueCurrent.split("-");
+            initialSelectedValues.from = from;
+            initialSelectedValues.to = to;
+        }
+
+        const options = {
+            range: {
+                    min: 0, 
+                    max: 50000000, // 50 triệu
+                    step: 10000 // bước nhảy 10.000đ
+                },
+                initialSelectedValues: initialSelectedValues,
+                prettify: (number) => {
+                    return parseInt(number).toLocaleString("vi-VN") + "đ";
+                },
+                onFinish: (values) => {
+                    const from = values.selectedValues.from;
+                    const to = values.selectedValues.to;
+                    const value = `${from}-${to}`;
+                    if(value) {
+                        url.searchParams.set("price", value);
+                    } else {
+                        url.searchParams.delete("price");
+                    }
+                    window.location.href = url.href;
+                }
+        };
 
     $('.range_slider').alRangeSlider(options);
+    }    
+    // End range_slider
+
     const options2 = {
         orientation: "vertical"
     };

@@ -20,21 +20,38 @@ header(class="header_2")
             span(class="mobile_menu_icon")
               i.far.fa-stream(class="menu_icon_bar")
       .col-xXl-6.col-xl-5.col-lg-5.d-none.d-lg-block
-        form(action="#")
-          select(class="select_2")
-            option All Categories
-            option Fashion
-            option Elentronics
-            option Fashion & Beauty
-            option Jewelry
-            option Grocery
+        form(form-search)
+          select(class="select_2" name="category")
+            option(value="") Tất cả 
+            each item in categoryProductList
+              option(value=item.slug) #{item.name}
           .input
+            span(class="inner-voice" button-voice)
+              <i class="fas fa-microphone"></i>
             input(
-              placeholder="Search your product..." 
+              placeholder="Cùng tìm kiếm nào..." 
               type="text"
+              name="keyword"
               )
             button(type="submit")
               i.far.fa-search
+          .inner-suggest(style="display: none;")
+            .inner-title Sản phẩm gợi ý
+            .inner-list
+              //- a(href="#" class="inner-item")
+              //-   img(src="/client/assets/images/product_18.png" class="inner-image")
+              //-   .inner-info
+              //-     .inner-name Samsung Galaxy S25 Ultra 12GB 256GB
+              //-     .inner-prices
+              //-       .inner-price-new 27.990.000đ
+              //-       .inner-price-old 33.380.000đ
+              //- a(href="#" class="inner-item")
+              //-   img(src="/client/assets/images/product_18.png" class="inner-image")
+              //-   .inner-info
+              //-     .inner-name Samsung Galaxy S25 Ultra 12GB 256GB
+              //-     .inner-prices
+              //-       .inner-price-new 27.990.000đ
+              //-       .inner-price-old 33.380.000đ    
       .col-xXl-4.col-xl-5.col-lg-5.d-none.d-lg-flex
         .d-flex.flex-wrap(class="header_support_user")
           div(class="header_support")
@@ -43,15 +60,15 @@ header(class="header_2")
             h3
               | Hotline:
               a(href="callto:1234567890")
-                span +(402) 763 282 46
+                span (+84) 962004029
         .d-flex.flex-wrap.align-items-center.justify-content-end(class="topbar_right")
           select.language(class="select_js")
-            option English
+            option VietNam
             option Arabic
             option Hindi
             option Chinese
           select(class="select_js")
-            option $USD
+            option VND
             option €EUR
             option ¥JPY
             option £GBP
