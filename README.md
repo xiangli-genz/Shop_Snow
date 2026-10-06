@@ -39,33 +39,9 @@ Chạy thông thường:
 npm start
 ```
 
-Ứng dụng lắng nghe tại cổng `3000` trên mọi địa chỉ mạng:
-
 - Website khách hàng: <http://localhost:3000>
 - Đăng nhập khách hàng: <http://localhost:3000/auth/login>
 - Đăng nhập quản trị: <http://localhost:3000/admin/account/login>
-
-Khi khởi động, ứng dụng sẽ kết nối MongoDB bằng biến `DATABASE`. Nếu kết nối thất bại, kiểm tra chuỗi kết nối, quyền truy cập database và kết nối mạng.
-
-## Chức năng chính
-
-### Khách hàng
-
-- Đăng ký, đăng nhập bằng email hoặc tài khoản mạng xã hội.
-- Xem sản phẩm theo danh mục, tìm kiếm, so sánh và quản lý danh sách yêu thích.
-- Thêm sản phẩm vào giỏ hàng, áp dụng mã giảm giá và đặt hàng.
-- Theo dõi đơn hàng, quản lý địa chỉ, đánh giá sản phẩm và tài khoản cá nhân.
-- Xem bài viết và sử dụng các chức năng liên quan đến trạm sạc.
-
-### Quản trị viên
-
-Truy cập tại `/admin`. Tài khoản quản trị cấp cao sử dụng các biến `SUPER_ADMIN_ID`, `SUPER_ADMIN_EMAIL` và `SUPER_ADMIN_PASSWORD` trong `.env`.
-
-- Dashboard và nhật ký hoạt động.
-- Quản lý sản phẩm, danh mục, thuộc tính và hình ảnh.
-- Quản lý đơn hàng, mã giảm giá, đánh giá và tài khoản khách hàng.
-- Quản lý bài viết, danh mục bài viết, tài khoản quản trị và phân quyền.
-- Quản lý cài đặt website, trạm sạc và file.
 
 ## Cấu trúc thư mục
 
@@ -83,17 +59,3 @@ Truy cập tại `/admin`. Tài khoản quản trị cấp cao sử dụng các 
 ├── index.ts       # Điểm khởi động Express
 └── package.json   # Dependency và lệnh chạy
 ```
-
-## Xử lý sự cố
-
-- **Không kết nối được MongoDB:** kiểm tra `DATABASE`, whitelist IP trên MongoDB Atlas và đảm bảo database đang chạy.
-- **Lỗi đăng nhập quản trị:** kiểm tra đủ bốn biến `SUPER_ADMIN_*` và `JWT_SECRET`.
-- **OAuth không hoạt động:** callback URL trong `.env` phải trùng với callback URL đã khai báo trong Google/Facebook Developer Console.
-- **Cookie không hoạt động khi chạy local:** dùng `NODE_ENV=development`; khi triển khai HTTPS, đặt `NODE_ENV=production`.
-- **Lỗi TypeScript hoặc dependency:** xóa `node_modules`, cài lại dependency bằng `npm install` rồi chạy lại `npm run dev`.
-
-## Ghi chú bảo mật
-
-- Không chia sẻ hoặc commit `.env`, JWT secret, mật khẩu quản trị và khóa thanh toán.
-- Dùng mật khẩu mạnh riêng cho môi trường production.
-- Khi triển khai thật, chạy sau HTTPS và thay toàn bộ giá trị mẫu trong phần cấu hình.
